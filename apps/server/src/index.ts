@@ -1,9 +1,10 @@
 import http from 'http';
 import { Server } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
+import { NET_CONFIG } from '@tower-clash/shared';
 import { createApp } from './app.js';
 
-const PORT = Number(process.env.PORT || 2567);
+const PORT = Number(process.env.PORT || NET_CONFIG.defaultPort);
 const app = createApp();
 const server = http.createServer(app);
 

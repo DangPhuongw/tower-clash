@@ -2,10 +2,12 @@ export const PHYS_CONFIG = {
   gravity: -20,
   blockW: 2.0,
   blockH: 0.8,
+  mass: 1.0,
   friction: 0.8,
   restitution: 0.05,
   pxPerUnit: 50,
   baseWidth: 4.0,
+  baseHeight: 1.0,
 } as const;
 
 export const CRANE_CONFIG = {
@@ -35,6 +37,17 @@ export const SCORE_CONFIG = {
   perfectTolerance: 0.05,
   comboStart: 3,
   comboMul: 1.5,
+} as const;
+
+export const CAMERA_CONFIG = {
+  lerp: 0.1,
+} as const;
+
+export const DISPLAY_CONFIG = {
+  width: 1280,
+  height: 720,
+  minPlayers: 1,
+  maxPlayers: 4,
 } as const;
 
 export const RACE_CONFIG = {
@@ -71,7 +84,34 @@ export const ITEM_CONFIG = {
   sabotageGainEveryTurns: 2,
 } as const;
 
+export const BOT_CONFIG = {
+  minReactionTimeMs: 150,
+  maxReactionTimeMs: 400,
+  specialBlockTiltThresholdDeg: 10,
+  difficulties: {
+    easy: {
+      threshold: 0.6,
+      jitter: 0.4,
+    },
+    normal: {
+      threshold: 0.35,
+      jitter: 0.2,
+    },
+    hard: {
+      threshold: 0.15,
+      jitter: 0.08,
+    },
+  },
+} as const;
+
+export const SECURITY_CONFIG = {
+  maxDropPerSec: 10,
+  minNicknameLength: 2,
+  maxNicknameLength: 16,
+} as const;
+
 export const NET_CONFIG = {
+  defaultPort: 2567,
   simHz: 60,
   snapshotHz: 20,
   interpDelayMs: 100,

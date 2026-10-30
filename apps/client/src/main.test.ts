@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import { DISPLAY_CONFIG } from '@tower-clash/shared';
 import { baseClientConfig, GAME_WIDTH, GAME_HEIGHT, GAME_CONTAINER_ID } from './gameConfig.js';
 
 describe('Client Configuration', () => {
-  it('should configure game dimensions to 1280x720 as specified in PLAN.md', () => {
-    expect(baseClientConfig.width).toBe(1280);
-    expect(baseClientConfig.height).toBe(720);
-    expect(GAME_WIDTH).toBe(1280);
-    expect(GAME_HEIGHT).toBe(720);
+  it('should configure game dimensions matching DISPLAY_CONFIG from shared', () => {
+    expect(baseClientConfig.width).toBe(DISPLAY_CONFIG.width);
+    expect(baseClientConfig.height).toBe(DISPLAY_CONFIG.height);
+    expect(GAME_WIDTH).toBe(DISPLAY_CONFIG.width);
+    expect(GAME_HEIGHT).toBe(DISPLAY_CONFIG.height);
   });
 
   it('should specify game-container as parent element', () => {
