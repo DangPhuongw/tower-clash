@@ -7,3 +7,5 @@ export type {
   SnapshotBlock,
   TowerSimOptions,
 } from './TowerSim.js';
+export { Crane } from './Crane.js';
+export type { CraneOptions, CraneState } from './Crane.js';

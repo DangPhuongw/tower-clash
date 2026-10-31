@@ -14,7 +14,7 @@ Kế hoạch gốc: [PLAN.md](PLAN.md)
 - [ ] **M1 – Lõi vật lý, chơi offline 1 người (Luyện tập)**
   - [x] **M1.1**: `constants.ts` chứa toàn bộ hằng số mục 9 và thông số hệ thống, không có số hard-code ở chỗ khác
   - [x] **M1.2**: `TowerSim`: tích hợp Rapier, nền móng, khối, bước mô phỏng cố định 60 Hz
-  - [ ] **M1.3**: Cần cẩu theo công thức sin, tăng tốc mỗi 10 tầng, cooldown sau khi thả
+  - [x] **M1.3**: Cần cẩu theo công thức sin, tăng tốc mỗi 10 tầng, cooldown sau khi thả
   - [ ] **M1.4**: Phát hiện kết quả thả: settle time, Perfect, Miss, Collapse
   - [ ] **M1.5**: Tính điểm và combo
   - [ ] **M1.6**: GameScene render Phaser: khối, cần cẩu, camera bám đỉnh, HUD điểm
@@ -80,3 +80,23 @@ Kế hoạch gốc: [PLAN.md](PLAN.md)
 - [x] Thêm hằng số `groundWidth`, `groundThickness`, `maxStepsPerAdvance` vào `PHYS_CONFIG`; export `@tower-clash/shared/sim`.
 - [x] `TowerSim.test.ts` (14 test): bước 60 Hz, trọng lực, khối nằm trên nền, khối rơi ra ngoài chạm đất, xếp chồng, bộ tích luỹ ở 30/60/144 FPS, chống spiral of death, tính tất định, dispose.
 - [x] `pnpm typecheck`, `pnpm test` (29/29), `pnpm lint`, `pnpm build`, Prettier đều qua; đã chạy thử `TowerSim` từ `dist` trong Node.
+
+### M1.3 – Cần cẩu (Crane): dao động sin, tăng tốc theo tầng, cooldown sau thả
+
+- [x] `packages/shared/src/sim/Crane.ts`:
+  - Dao động ngang điều hoà theo công thức mục 3.2: $x(t) = \text{centerX} + A \cdot \sin(2\pi(t - t_0) / T)$ với $A = 3.0$ unit, $T = 2.0$ giây.
+  - Cao độ cẩu luôn ở đỉnh tháp $y(t) = \text{topY} + 6.0$ unit (`CRANE_CONFIG.heightAboveTop`).
+  - Tăng tốc: Cứ mỗi 10 tầng, chu kỳ $T$ giảm 5% ($T \times 0.95$), tối thiểu 1.0 giây (`CRANE_CONFIG.minPeriod`).
+  - Hỗ trợ các hệ số điều chỉnh chu kỳ và biên độ (`periodMultiplier`, `amplitudeMultiplier`) chuẩn bị cho hệ thống bài/item (như Cẩu chậm, Cẩu nhanh, Biên độ rộng).
+  - Vận tốc tức thời $v_x(t) = A \cdot (2\pi / T) \cdot \cos(\dots)$, vận tốc ban đầu của khối khi thả $= v_x(t) \times 0.3$ (`CRANE_CONFIG.releaseVelFactor`).
+  - Cơ chế khoá thả (cooldown): Sau mỗi lần thả, cẩu bị khoá 0.6 giây (`CRANE_CONFIG.dropCooldown`) trước khi khối mới xuất hiện. Hỗ trợ `canDrop()`, `getCooldownRemaining()`, `recordDrop()`, `resetCooldown()`.
+- [x] Tích hợp với `TowerSim`:
+  - Thêm phương thức `sim.dropFromCrane(crane, time)`: Tự động tính vị trí đỉnh tháp, lấy toạ độ $(x, y)$ và vận tốc ngang $v_x$ từ cẩu, kiểm tra cooldown và tạo khối mới vào thế giới Rapier.
+- [x] `Crane.test.ts` (14 unit test toàn diện):
+  - Kiểm tra toạ độ $x(t)$ theo các mốc thời gian ($0$, $T/4$, $T/2$, $3T/4$, $T$), kiểm tra toạ độ với `centerX` và `startTime` offset.
+  - Kiểm tra cao độ $y$ bám theo đỉnh tháp.
+  - Kiểm tra công thức tăng tốc cẩu theo tầng ($0\dots9$, $10$, $20$, $30$, $60$ tầng) và giới hạn chặn dưới 1.0 giây.
+  - Kiểm tra vận tốc ngang cẩu và vận tốc thả của khối tại các vị trí biên và cân bằng.
+  - Kiểm tra cơ chế khoá cooldown 0.6s sau khi thả.
+  - Kiểm tra tích hợp trực tiếp `TowerSim.dropFromCrane()`.
+- [x] Toàn bộ test suite: 43/43 tests passed 100%. Toàn bộ pipeline `format`, `lint`, `typecheck`, `build` xanh 100%.

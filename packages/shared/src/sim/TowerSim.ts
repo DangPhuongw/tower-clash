@@ -1,6 +1,7 @@
 import { NET_CONFIG, PHYS_CONFIG } from '../config/constants.js';
 import { RAPIER, initPhysics, isPhysicsReady } from './rapier.js';
 import type { Collider, RigidBody, World } from '@dimforge/rapier2d-compat';
+import type { Crane } from './Crane.js';
 
 /** Định danh khối, tăng dần từ 1 trong mỗi TowerSim. */
 export type BlockId = number;
@@ -169,6 +170,32 @@ export class TowerSim {
     const id = this.nextId++;
     this.blocks.set(id, { id, body, collider, width, height });
     return id;
+  }
+
+  /**
+   * Thả một khối từ cần cẩu vào thế giới mô phỏng.
+   * Lấy toạ độ (x, y) và vận tốc ngang từ cẩu, kiểm tra và ghi nhận cooldown.
+   * Trả về BlockId nếu thả thành công, hoặc null nếu cẩu đang bị khoá cooldown.
+   */
+  dropFromCrane(
+    crane: Crane,
+    time: number = this.time,
+    spawnOverrides: Partial<BlockSpawn> = {},
+  ): BlockId | null {
+    if (!crane.canDrop(time)) {
+      return null;
+    }
+    const topY = this.getTopY();
+    const state = crane.getState(time, topY);
+    crane.recordDrop(time);
+
+    return this.spawnBlock({
+      x: state.x,
+      y: state.y,
+      vx: state.releaseVx,
+      vy: 0,
+      ...spawnOverrides,
+    });
   }
 
   /** Xoá một khối. Trả về false nếu id không tồn tại. */
