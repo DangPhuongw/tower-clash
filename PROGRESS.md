@@ -15,9 +15,9 @@ Kế hoạch gốc: [PLAN.md](PLAN.md)
   - [x] **M1.1**: `constants.ts` chứa toàn bộ hằng số mục 9 và thông số hệ thống, không có số hard-code ở chỗ khác
   - [x] **M1.2**: `TowerSim`: tích hợp Rapier, nền móng, khối, bước mô phỏng cố định 60 Hz
   - [x] **M1.3**: Cần cẩu theo công thức sin, tăng tốc mỗi 10 tầng, cooldown sau khi thả
-  - [ ] **M1.4**: Phát hiện kết quả thả: settle time, Perfect, Miss, Collapse
-  - [ ] **M1.5**: Tính điểm và combo
-  - [ ] **M1.6**: GameScene render Phaser: khối, cần cẩu, camera bám đỉnh, HUD điểm
+  - [x] **M1.4**: Phát hiện kết quả thả: settle time, Perfect, Miss, Collapse
+  - [x] **M1.5**: Tính điểm và combo
+  - [x] **M1.6**: GameScene render Phaser: khối, cần cẩu, camera bám đỉnh, HUD điểm
   - [ ] **M1.7**: Thử nghiệm gameplay và cảm giác rơi
   - [ ] **M1.8**: Tinh chỉnh hằng số (nếu cần)
 - [ ] **M2 – Engine luật bài và item (thuần logic)**
@@ -100,3 +100,62 @@ Kế hoạch gốc: [PLAN.md](PLAN.md)
   - Kiểm tra cơ chế khoá cooldown 0.6s sau khi thả.
   - Kiểm tra tích hợp trực tiếp `TowerSim.dropFromCrane()`.
 - [x] Toàn bộ test suite: 43/43 tests passed 100%. Toàn bộ pipeline `format`, `lint`, `typecheck`, `build` xanh 100%.
+
+### M1.4 – Phát hiện kết quả thả: settle time, Perfect, Miss, Collapse
+
+- [x] `packages/shared/src/sim/DropEvaluator.ts`:
+  - `checkCollapse()`: Kiểm tra điều kiện sập theo mục 3.3 PLAN.md:
+    1. Bất kỳ khối đã đặt trước đó chạm đất (`isTouchingGround(id)`).
+    2. Trục tháp (từ tâm nền móng $(baseX, baseHeight/2)$ đến tâm khối cao nhất) nghiêng quá 25° (`COLLAPSE_CONFIG.maxTiltDeg`).
+  - `isTowerStable()`: Đánh giá trạng thái đứng yên khi toàn bộ khối có vận tốc dài và góc $< 0.05$ (`SETTLE_CONFIG.velEps`).
+  - `evaluateSettledDrop()`: Đánh giá phân loại kết quả sau khi ổn định:
+    - `collapse`: Tháp bị sập do chạm đất hoặc nghiêng quá 25°.
+    - `miss`: Khối mới rơi chạm đất nhưng các khối cũ vẫn đứng vững, combo bị reset, không tính là sập.
+    - `perfect`: Khối nằm trên tháp và lệch tâm $\le 5\%$ chiều rộng khối ($0.05 \times 2.0 = 0.10$ unit dung sai theo `SCORE_CONFIG.perfectTolerance`).
+    - `success`: Khối nằm trên tháp nhưng lệch tâm $> 5\%$ chiều rộng khối.
+  - `DropSettler`: Quản lý tiến trình ổn định của khối rơi: phát hiện sập tức thời giữa chừng, tự động kết thúc sớm nếu đứng yên đủ 0.3s (`SETTLE_CONFIG.stableTime`) hoặc kết thúc ở mốc tối đa 2.0s (`SETTLE_CONFIG.maxTime`).
+- [x] `DropEvaluator.test.ts` (14 unit test toàn diện):
+  - Bao phủ đủ 4 trường hợp: Perfect, Thành công, Trượt (Miss), Sập (Collapse do khối cũ chạm đất, Collapse do góc nghiêng trục tháp $> 25^\circ$).
+  - Kiểm tra settle sớm 0.3s, settle tối đa 2.0s, phát hiện sập tức thời giữa chừng.
+
+### M1.5 – Tính điểm và combo (ScoreTracker)
+
+- [x] `packages/shared/src/rules/ScoreTracker.ts`:
+  - Quản lý điểm số, số tầng, chuỗi combo liên tiếp, kỷ lục maxCombo theo mục 3.4 PLAN.md:
+    - Thành công (Success): $+10$ điểm (`SCORE_CONFIG.perFloor`), $+1$ tầng, reset combo về 0.
+    - Perfect: $+1$ tầng, cộng thưởng $+5$ điểm (`SCORE_CONFIG.perfectBonus`), tăng combo $+1$.
+    - Từ Perfect thứ 3 liên tiếp trở đi (`SCORE_CONFIG.comboStart = 3`): Điểm tầng nhân hệ số $\times 1.5$ (`SCORE_CONFIG.comboMul`), tức $10 \times 1.5 = 15$, cộng thưởng $+5 \implies +20$ điểm mỗi tầng.
+    - Trượt (Miss): 0 điểm, không tăng tầng, reset combo về 0.
+    - Sập (Collapse): reset combo về 0.
+  - Hỗ trợ `floorBonus` (chuẩn bị cho lá bài Số N ở chế độ Race), trừ tầng phạt (`removeFloors(3)` cho Sabotage/Co-op), `reset()`, và hàm thuần `computeDropScore()`.
+- [x] `packages/shared/src/rules/ScoreTracker.test.ts` (11 unit test toàn diện):
+  - Kiểm tra chính xác bảng điểm, chuỗi combo liên tiếp 1, 2, 3, 4, phá chuỗi combo khi gặp Thành công bình thường, Trượt, Sập, và trừ tầng phạt.
+
+### M1.6 – GameScene Phaser & Luyện tập offline
+
+- [x] `packages/shared/src/sim/TowerController.ts`:
+  - Hợp nhất `TowerSim`, `Crane`, `DropSettler`, `ScoreTracker` thành một controller hoàn chỉnh dùng chung cho cả client và server.
+  - Tự động điều khiển chu kỳ tăng tốc cẩu (giảm 5% sau mỗi 10 tầng), tự động dọn khối trượt khỏi thế giới vật lý, cung cấp snapshot và sự kiện kết thúc thả `DropEvent`.
+  - Hỗ trợ `drop(time, spawnOverrides)` cho phép ghi đè vận tốc ban đầu khi cần.
+  - `TowerController.test.ts` (5 test): Thả khối, settle, tính điểm, tăng tốc cẩu, reset, và kiểm tra tính tất định (cùng seed/input cho kết quả giống hệt nhau).
+- [x] `apps/client/src/scenes/GameScene.ts`:
+  - Render đồ hoạ hoàn toàn bằng Phaser Graphics (không dùng physics của Phaser, tuân thủ nghiêm ngặt mục 2):
+    - Khối tháp: bo góc hiện đại, đổ bóng gradient, hiển thị góc xoay vật lý chính xác.
+    - Cần cẩu: thanh ray trên cùng, xe cẩu trượt dao động theo $x(t)$, dây cáp treo, móc cẩu và khối mẫu ngậm ở móc khi sẵn sàng.
+    - Nền móng & mặt đất: bệ đá vững chắc có vạch tâm neon, mặt đất phía dưới.
+    - Bầu trời ban đêm sâu thẳm với lớp sao parallax di chuyển theo cao độ.
+  - Camera bám đỉnh: Tự động cuộn mượt mà theo đỉnh tháp với lerp 0.1 (`CAMERA_CONFIG.lerp`), giữ đỉnh tháp và cần cẩu luôn ở vùng trung tâm tầm nhìn.
+  - HUD thông tin đầy đủ & đẹp mắt:
+    - Điểm số to rõ, số tầng hiện tại.
+    - Huy hiệu Combo nổi bật kèm nhãn x1.5 ĐIỂM khi đạt từ 3 Perfect liên tiếp trở lên.
+    - Thanh tiến trình nạp khối / cooldown (0.6s).
+    - Thông báo nổi (Floating Toast): hiển thị ngay lập tức "PERFECT! +15/+20", "THÀNH CÔNG! +10", "TRƯỢT! 0 ĐIỂM", "SẬP THÁP!".
+    - Hiệu ứng rung màn hình khi sập và hạt phát sáng (sparkles) khi Perfect.
+    - Hộp thoại Tháp Sập (Game Over Modal) hiển thị tổng kết (Điểm, Tầng, Max Combo, Perfects) và nút "CHƠI LẠI".
+  - Điều khiển linh hoạt: Nhấn phím `Space` hoặc click chuột bất kỳ đâu để thả; phím `R` để chơi lại nhanh.
+- [x] `apps/client/src/scenes/BootScene.ts`:
+  - Giao diện khởi động hiện đại với nút "BẮT ĐẦU LUYỆN TẬP (OFFLINE)", bấm nút hoặc nhấn Space chuyển mượt sang `GameScene`.
+- [x] Kiểm thử toàn bộ:
+  - 8/8 test files, 73/73 tests passed 100%.
+  - Pipeline `lint`, `format`, `typecheck`, `build` xanh 100%.
+

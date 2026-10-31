@@ -17,6 +17,10 @@
       "types": "./dist/protocol/index.d.ts",
       "import": "./dist/protocol/index.js"
     },
+    "./rules": {
+      "types": "./dist/rules/index.d.ts",
+      "import": "./dist/rules/index.js"
+    },
     "./sim": {
       "types": "./dist/sim/index.d.ts",
       "import": "./dist/sim/index.js"

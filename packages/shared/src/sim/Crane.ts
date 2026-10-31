@@ -149,6 +149,11 @@ export class Crane {
     this.floors = Math.max(0, Math.floor(floors));
   }
 
+  /** Bí danh tương đương với setFloors. */
+  updatePeriodForFloor(floors: number): void {
+    this.setFloors(floors);
+  }
+
   /** Cập nhật các hệ số hiệu ứng (bài / item). */
   setModifiers(modifiers: { periodMultiplier?: number; amplitudeMultiplier?: number }): void {
     if (modifiers.periodMultiplier !== undefined) {
@@ -164,9 +169,17 @@ export class Crane {
     return Crane.computePeriod(floors, this.periodMultiplier, this.basePeriod);
   }
 
+  get period(): number {
+    return this.getPeriod();
+  }
+
   /** Lấy biên độ dao động hiệu dụng. */
   getAmplitude(): number {
     return this.baseAmplitude * this.amplitudeMultiplier;
+  }
+
+  get amplitude(): number {
+    return this.getAmplitude();
   }
 
   /** Lấy toạ độ x tức thời tại thời điểm t. */
