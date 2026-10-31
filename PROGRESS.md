@@ -13,7 +13,7 @@ Kế hoạch gốc: [PLAN.md](PLAN.md)
   - [x] Tiêu chí hoàn thành: `pnpm install`, `pnpm build`, `pnpm test` chạy qua, CI sẵn sàng, `pnpm dev` chạy cả 2 app
 - [ ] **M1 – Lõi vật lý, chơi offline 1 người (Luyện tập)**
   - [x] **M1.1**: `constants.ts` chứa toàn bộ hằng số mục 9 và thông số hệ thống, không có số hard-code ở chỗ khác
-  - [ ] **M1.2**: `TowerSim`: tích hợp Rapier, nền móng, khối, bước mô phỏng cố định 60 Hz
+  - [x] **M1.2**: `TowerSim`: tích hợp Rapier, nền móng, khối, bước mô phỏng cố định 60 Hz
   - [ ] **M1.3**: Cần cẩu theo công thức sin, tăng tốc mỗi 10 tầng, cooldown sau khi thả
   - [ ] **M1.4**: Phát hiện kết quả thả: settle time, Perfect, Miss, Collapse
   - [ ] **M1.5**: Tính điểm và combo
@@ -67,3 +67,16 @@ Kế hoạch gốc: [PLAN.md](PLAN.md)
   - `apps/server/src/index.ts` sử dụng `NET_CONFIG.defaultPort`.
 - [x] Bổ sung bộ unit test toàn diện cho tất cả các hằng số trong `packages/shared/src/config.test.ts` (11 test case riêng biệt).
 - [x] Toàn bộ test suite (15/15 test) passed 100%.
+
+### M1.2 – TowerSim: Rapier, nền móng, khối, bước cố định 60 Hz
+
+- [x] `packages/shared/src/sim/rapier.ts`: `initPhysics()` khởi tạo WASM Rapier (`@dimforge/rapier2d-compat`) đúng một lần, chạy được trong Node và trình duyệt.
+- [x] `packages/shared/src/sim/TowerSim.ts` (không phụ thuộc Phaser):
+  - Thế giới Rapier với trọng lực `PHYS_CONFIG.gravity`, timestep `1/NET_CONFIG.simHz`.
+  - Mặt đất tĩnh (mặt trên y = 0) và nền móng tĩnh rộng 4 unit, tâm tại `baseX`.
+  - `spawnBlock()` / `removeBlock()`: khối động 2.0 x 0.8, khối lượng 1, ma sát 0.8, độ nảy 0.05 (cho phép ghi đè cho bài/item sau này), bật CCD.
+  - Bước cố định: `step()`, `stepN()`, `advance(dt)` với bộ tích luỹ, `alpha` để nội suy render, giới hạn `maxStepsPerAdvance`.
+  - Truy vấn: `getBlock()`, `getBlocks()`, `toSnapshot()` (định dạng `[id, x, y, angle, w, h]` mục 7.4), `isTouchingGround()`, `isTouchingBase()`, `getTopY()`, `dispose()`.
+- [x] Thêm hằng số `groundWidth`, `groundThickness`, `maxStepsPerAdvance` vào `PHYS_CONFIG`; export `@tower-clash/shared/sim`.
+- [x] `TowerSim.test.ts` (14 test): bước 60 Hz, trọng lực, khối nằm trên nền, khối rơi ra ngoài chạm đất, xếp chồng, bộ tích luỹ ở 30/60/144 FPS, chống spiral of death, tính tất định, dispose.
+- [x] `pnpm typecheck`, `pnpm test` (29/29), `pnpm lint`, `pnpm build`, Prettier đều qua; đã chạy thử `TowerSim` từ `dist` trong Node.

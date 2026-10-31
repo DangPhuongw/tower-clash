@@ -8,6 +8,11 @@ export const PHYS_CONFIG = {
   pxPerUnit: 50,
   baseWidth: 4.0,
   baseHeight: 1.0,
+  /** Mặt đất: thân tĩnh rất rộng, mặt trên nằm ở y = 0. Nền móng đặt trên mặt đất. */
+  groundWidth: 200,
+  groundThickness: 1.0,
+  /** Số bước tối đa trong một lần advance() để tránh "spiral of death" khi tab bị treo. */
+  maxStepsPerAdvance: 8,
 } as const;
 
 export const CRANE_CONFIG = {

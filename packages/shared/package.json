@@ -16,6 +16,10 @@
     "./protocol": {
       "types": "./dist/protocol/index.d.ts",
       "import": "./dist/protocol/index.js"
+    },
+    "./sim": {
+      "types": "./dist/sim/index.d.ts",
+      "import": "./dist/sim/index.js"
     }
   },
   "scripts": {
